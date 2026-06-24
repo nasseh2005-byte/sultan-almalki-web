@@ -2,20 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -59,8 +46,6 @@ const iconMap = {
   Landmark,
   BriefcaseBusiness,
 };
-
-const chartColors = ["#C9A44C", "#1E6BFF", "#22C55E", "#8BA6FF", "#D8C27A"];
 
 export function SiteExperience({ locale }: SiteExperienceProps) {
   const copy = siteCopy[locale];
@@ -121,52 +106,6 @@ export function SiteExperience({ locale }: SiteExperienceProps) {
     });
   }, [playClick]);
 
-  const chartData = useMemo(() => {
-    const portfolio = approvedSnapshot.contractingPortfolio.companies.map((company) => ({
-      key: company.key,
-      name: locale === "ar" ? company.nameAr : company.nameEn,
-      cases: company.caseCount,
-      amount: company.amountSar,
-    }));
-
-    const enforcement = approvedSnapshot.enforcementPortfolio.companies.map((company) => {
-      const partner = approvedSnapshot.contractingPortfolio.companies.find(
-        (item) => item.key === company.key,
-      );
-
-      return {
-        key: company.key,
-        name: locale === "ar" ? partner?.nameAr ?? company.key : partner?.nameEn ?? company.key,
-        requests: company.requestCount,
-        amount: company.amountSar,
-      };
-    });
-
-    const statuses = [
-      {
-        key: "stayOfExecution",
-        name: locale === "ar" ? "إيقاف التنفيذ" : "Stay of execution",
-        count: approvedSnapshot.enforcementPortfolio.statusTotals.stayOfExecution.count,
-        amount: approvedSnapshot.enforcementPortfolio.statusTotals.stayOfExecution.amountSar,
-      },
-      {
-        key: "referredToJudicialCircuit",
-        name: locale === "ar" ? "محال إلى دائرة قضائية" : "Referred to judicial circuit",
-        count: approvedSnapshot.enforcementPortfolio.statusTotals.referredToJudicialCircuit.count,
-        amount:
-          approvedSnapshot.enforcementPortfolio.statusTotals.referredToJudicialCircuit.amountSar,
-      },
-      {
-        key: "notAccepted",
-        name: locale === "ar" ? "عدم قبول" : "Not accepted",
-        count: approvedSnapshot.enforcementPortfolio.statusTotals.notAccepted.count,
-        amount: approvedSnapshot.enforcementPortfolio.statusTotals.notAccepted.amountSar,
-      },
-    ];
-
-    return { portfolio, enforcement, statuses };
-  }, [locale]);
-
   const stats = [
     {
       value: formatInteger(approvedSnapshot.contractingPortfolio.totalCases, locale),
@@ -197,7 +136,7 @@ export function SiteExperience({ locale }: SiteExperienceProps) {
   const navTargets = [
     { label: copy.nav[0], href: "#services" },
     { label: copy.nav[1], href: "#partners" },
-    { label: copy.nav[2], href: "#data" },
+    { label: copy.nav[2], href: `/${locale}/analytics` },
     { label: copy.nav[3], href: "#methodology" },
     { label: copy.nav[4], href: "#contact" },
   ];
@@ -268,10 +207,14 @@ export function SiteExperience({ locale }: SiteExperienceProps) {
                 {copy.primaryCta}
                 <ArrowIcon size={18} />
               </a>
-              <a className="button button-secondary" href="#data" onPointerDown={playClick}>
+              <Link
+                className="button button-secondary"
+                href={`/${locale}/analytics`}
+                onPointerDown={playClick}
+              >
                 <BarChart3 size={18} />
                 {copy.secondaryCta}
-              </a>
+              </Link>
               <a className="button button-secondary" href="#profile" onPointerDown={playClick}>
                 <FileCheck size={18} />
                 {copy.profileCta}
@@ -394,7 +337,7 @@ export function SiteExperience({ locale }: SiteExperienceProps) {
           <h2 className="section-title">{copy.dataTitle}</h2>
           <p className="section-lead">{copy.dataLead}</p>
 
-          <div className="data-layout">
+          <div className="data-layout data-summary-layout">
             <div className="ring-grid">
               {stats.map((item) => (
                 <article
@@ -415,76 +358,25 @@ export function SiteExperience({ locale }: SiteExperienceProps) {
               ))}
             </div>
 
-            <div className="grid-2" style={{ marginBlockStart: 0 }}>
-              <ChartCard title={copy.chartPortfolioCases}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData.portfolio} layout="vertical" margin={{ left: 8, right: 8 }}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.10)" horizontal={false} />
-                    <XAxis type="number" tickFormatter={(value) => formatInteger(Number(value), locale)} />
-                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(value) => formatInteger(Number(value), locale)} />
-                    <Bar dataKey="cases" fill="#C9A44C" radius={[4, 4, 4, 4]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-
-              <ChartCard title={copy.chartPortfolioAmount}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData.portfolio} layout="vertical" margin={{ left: 8, right: 8 }}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.10)" horizontal={false} />
-                    <XAxis type="number" tickFormatter={(value) => formatSarCompact(Number(value), locale)} />
-                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(value) => formatSarCompact(Number(value), locale)} />
-                    <Bar dataKey="amount" fill="#1E6BFF" radius={[4, 4, 4, 4]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-            </div>
-          </div>
-
-          <div className="grid-2">
-            <ChartCard title={copy.chartEnforcement}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData.enforcement} margin={{ left: 8, right: 8 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.10)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} />
-                  <YAxis tickFormatter={(value) => formatInteger(Number(value), locale)} />
-                  <Tooltip formatter={(value, name) =>
-                    name === "amount"
-                      ? formatSarCompact(Number(value), locale)
-                      : formatInteger(Number(value), locale)
-                  } />
-                  <Legend />
-                  <Bar dataKey="requests" name={copy.tableRequests} fill="#22C55E" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="amount" name={copy.tableAmount} fill="#8BA6FF" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title={copy.chartStatuses}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData.statuses}
-                    dataKey="count"
-                    nameKey="name"
-                    innerRadius="58%"
-                    outerRadius="82%"
-                    paddingAngle={3}
-                    label={({ name, percent }) =>
-                      `${name} ${new Intl.NumberFormat(locale === "ar" ? "ar-SA" : "en-US", {
-                        maximumFractionDigits: 0,
-                      }).format((percent ?? 0) * 100)}%`
-                    }
-                  >
-                    {chartData.statuses.map((entry, index) => (
-                      <Cell key={entry.key} fill={chartColors[index]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatInteger(Number(value), locale)} />
-                </PieChart>
-              </ResponsiveContainer>
-            </ChartCard>
+            <article className="card analytics-promo-card">
+              <span className="icon-tile">
+                <BarChart3 size={22} />
+              </span>
+              <h3>{locale === "ar" ? "لوحة رسوم مستقلة وواضحة" : "Dedicated analytics board"}</h3>
+              <p>
+                {locale === "ar"
+                  ? "تم نقل الرسوم إلى صفحة واسعة بتسميات مباشرة، مساحات أكبر، وقراءة أوضح للمحفظة والتنفيذ."
+                  : "Charts now live on a wide dedicated page with direct labels, larger spacing, and clearer portfolio and enforcement reading."}
+              </p>
+              <Link
+                className="button button-primary"
+                href={`/${locale}/analytics`}
+                onPointerDown={playClick}
+              >
+                {locale === "ar" ? "فتح صفحة الرسوم البيانية" : "Open analytics page"}
+                <ArrowIcon size={18} />
+              </Link>
+            </article>
           </div>
 
           <table className="data-table">
@@ -497,14 +389,18 @@ export function SiteExperience({ locale }: SiteExperienceProps) {
               </tr>
             </thead>
             <tbody>
-              {chartData.portfolio.map((company) => {
-                const enforcement = chartData.enforcement.find((item) => item.key === company.key);
+              {approvedSnapshot.contractingPortfolio.companies.map((company) => {
+                const enforcement = approvedSnapshot.enforcementPortfolio.companies.find(
+                  (item) => item.key === company.key,
+                );
+                const name = locale === "ar" ? company.nameAr : company.nameEn;
+
                 return (
                   <tr key={company.key}>
-                    <td>{company.name}</td>
-                    <td dir="ltr">{formatInteger(company.cases, locale)}</td>
-                    <td dir="ltr">{formatSarCompact(company.amount, locale)}</td>
-                    <td dir="ltr">{formatInteger(enforcement?.requests ?? 0, locale)}</td>
+                    <td>{name}</td>
+                    <td dir="ltr">{formatInteger(company.caseCount, locale)}</td>
+                    <td dir="ltr">{formatSarCompact(company.amountSar, locale)}</td>
+                    <td dir="ltr">{formatInteger(enforcement?.requestCount ?? 0, locale)}</td>
                   </tr>
                 );
               })}
@@ -621,22 +517,5 @@ export function SiteExperience({ locale }: SiteExperienceProps) {
         </a>
       </div>
     </div>
-  );
-}
-
-function ChartCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <article className="card chart-card">
-      <div className="chart-title">
-        <h3>{title}</h3>
-      </div>
-      <div className="chart-frame">{children}</div>
-    </article>
   );
 }
